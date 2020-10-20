@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+import tkinter as tk      
+import serial
+
+ser = serial.Serial('/dev/ttyACM0', 9600)    
+window = tk.Tk()
+window.title("Force Indication/Control Menu")
+
+Ebutton = tk.Button(text="Extend", width=5, height=2, bg="gray", fg="green")
+Ebutton.pack(side=tk.RIGHT)
+
+Rbutton = tk.Button(text="Retract", width=5, height=2, bg="gray", fg="red")
+Rbutton.pack(side=tk.RIGHT)
+
+forceReading = tk.Label(text="5")
+forceReading.pack(side=tk.LEFT)
+
+def handle_extend(event):
+    text = forceReading["text"]
+    forceReading["text"] = "7"
+    print("Extend!")
+window.mainloop() # handles button events, allowing keybinds
+
+Ebutton.bind("E", handle_extend)
+
+events_list = []
+
+while True:      
+    
+    if events_list == []:
+        continue
+    
+    event = events_list[0]
+    
+    if event.type == "keypress":
+        handle_extend(event)
+        
+    #event, values = window.read()      
+    #if event != sg.WIN_CLOSED:      
+    #    if(ser.in_waiting >0):
+    #        inputvar = line = ser.readline().decode('utf_8')
+            # if statement setting the R, S, or E
+    #        ser.write(str("LR").encode('utf_8'))     
+
+    #    window['output'].update(inputvar)
+    
+    #else:
+    #    window['output'].update('nada')
+    
+    #    break
