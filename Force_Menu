@@ -7,35 +7,68 @@ window = tk.Tk()
 window.title("Force Indication/Control Menu")
 window.geometry('400x100')
 
-Ebutton = tk.Button(text="Extend", width=5, height=2, bg="gray", fg="green")
-Ebutton.pack(side=tk.RIGHT)
+Hbutton = tk.Button(text="High Limits", width=6, height=1, bg="gray", fg="red")
+Hbutton.pack(side=tk.LEFT)
+
+Lbutton = tk.Button(text="Low Limits", width=6, height=1, bg="gray", fg="green")
+Lbutton.pack(side=tk.LEFT)
 
 Rbutton = tk.Button(text="Retract", width=5, height=2, bg="gray", fg="red")
 Rbutton.pack(side=tk.RIGHT)
 
+Ebutton = tk.Button(text="Extend", width=5, height=2, bg="gray", fg="green")
+Ebutton.pack(side=tk.RIGHT)
+
+forceReading = tk.Label(text="Force reading (lbs):", width=6, height=1)
+forceReading.pack(side=tk.TOP)
+
 forceReading = tk.Label(text="5")
-forceReading.pack(side=tk.LEFT)
+forceReading.pack(side=tk.TOP)
 
+#Defining motor controller actions
+def handle_low(event):
+    global forcelimit
+    forcelimit = "L"
+    Lbutton.config(relief=tk.SUNKEN)
+    Hbutton.config(relief=tk.RAISED)
+def handle_high(event):
+    global forcelimit
+    forcelimit = "H"
+    Hbutton.config(relief=tk.SUNKEN)
+    Lbutton.config(relief=tk.RAISED)
 def handle_extend(event):
+    global forcelimit
+    forcecontrol = "E"
+    Ebutton.config(relief=tk.SUNKEN)
     text = forceReading["text"]
-    forceReading["text"] = "Extend"
-
+    forceReading["text"] = forcelimit + forcecontrol
 def handle_retract(event):
+    global forcelimit
+    forcecontrol = "R"
+    Rbutton.config(relief=tk.SUNKEN)
     text = forceReading["text"]
-    forceReading["text"] = "Retract"
-
+    forceReading["text"] = forcelimit + forcecontrol
 def handle_stop(event):
+    global forcelimit
+    forcecontrol = "S"
+    Ebutton.config(relief=tk.RAISED)
+    Rbutton.config(relief=tk.RAISED)
     text = forceReading["text"]
-    forceReading["text"] = "Stop"
-    
+    forceReading["text"] = forcelimit + forcecontrol
+
+#Key binds control everything
 window.bind("<e>", handle_extend)
 window.bind("<r>", handle_retract)
+window.bind("<l>", handle_low)
+window.bind("<h>", handle_high)
 window.bind("<KeyRelease-r>", handle_stop)
 window.bind("<KeyRelease-e>", handle_stop)
 Ebutton.bind("<Button-1>", handle_extend)
 Ebutton.bind("<ButtonRelease-1>", handle_stop)
 Rbutton.bind("<Button-1>", handle_retract)
 Rbutton.bind("<ButtonRelease-1>", handle_stop)
+Hbutton.bind("<Button-1>", handle_high)
+Lbutton.bind("<Button-1>", handle_low)
 
 window.mainloop() # handles button events, allowing keybinds
 
@@ -62,4 +95,4 @@ while True:
     #else:
     #    window['output'].update('nada')
     
-    #    break
+    break
