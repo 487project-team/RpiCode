@@ -5,6 +5,7 @@ import serial
 ser = serial.Serial('/dev/ttyACM0', 9600)    
 window = tk.Tk()
 window.title("Force Indication/Control Menu")
+window.geometry('400x100')
 
 Ebutton = tk.Button(text="Extend", width=5, height=2, bg="gray", fg="green")
 Ebutton.pack(side=tk.RIGHT)
@@ -17,23 +18,37 @@ forceReading.pack(side=tk.LEFT)
 
 def handle_extend(event):
     text = forceReading["text"]
-    forceReading["text"] = "7"
-    print("Extend!")
-window.mainloop() # handles button events, allowing keybinds
+    forceReading["text"] = "Extend"
 
-Ebutton.bind("E", handle_extend)
+def handle_retract(event):
+    text = forceReading["text"]
+    forceReading["text"] = "Retract"
+
+def handle_stop(event):
+    text = forceReading["text"]
+    forceReading["text"] = "Stop"
+    
+window.bind("<e>", handle_extend)
+window.bind("<r>", handle_retract)
+window.bind("<KeyRelease-r>", handle_stop)
+window.bind("<KeyRelease-e>", handle_stop)
+Ebutton.bind("<Button-1>", handle_extend)
+Ebutton.bind("<ButtonRelease-1>", handle_stop)
+Rbutton.bind("<Button-1>", handle_retract)
+Rbutton.bind("<ButtonRelease-1>", handle_stop)
+
+window.mainloop() # handles button events, allowing keybinds
 
 events_list = []
 
 while True:      
-    
     if events_list == []:
         continue
-    
+        
     event = events_list[0]
     
-    if event.type == "keypress":
-        handle_extend(event)
+    #if event.type == "keypress":
+        #handle_extend(event)
         
     #event, values = window.read()      
     #if event != sg.WIN_CLOSED:      
