@@ -1,6 +1,6 @@
 #Dependencies
 import sys
-from cv2 import cv2
+import cv2
 import threading
 import tkinter as tk
 from tkinter import *
@@ -90,7 +90,7 @@ class IndicatorFrame (Frame):
 
 def main(args):
     root = Tk()
-    root.iconbitmap("Resources/appIcon.ico")
+#    root.iconbitmap("Resources/appIcon.ico")
 #
     app = App(root, "Force Control Menu")
 #
@@ -103,7 +103,7 @@ def main(args):
     
 #Controls Menu Settings
     top = Toplevel()
-    top.iconbitmap("Resources/appIcon.ico")
+    #top.iconbitmap("Resources/appIcon.ico")
     top.title("About this application...")
     msg = Message(top, text="Place Holder Instructions")
     msg.pack()
