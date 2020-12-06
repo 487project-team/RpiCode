@@ -3,12 +3,12 @@
 import sys, cv2, time, serial, threading, time
 import tkinter as tk
 from tkinter import *
-import tkinter.ttk as ttk
+#import tkinter.ttk as ttk
 from queue import Queue
 from PIL import Image
 from PIL import ImageTk
 
-ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=None)
+ser = serial.Serial('/dev/ttyUSB1', 9600, timeout=None)
 global limit; limit = "L"
 global No; No = 0
 
@@ -21,10 +21,11 @@ class App(tk.Frame):
         self.thread = None
         self.queue0 = Queue()
         self.queue1 = Queue()
-        self.photo0 = ImageTk.PhotoImage(Image.new("RGB", (64, 48), "teal"))
-        self.photo1 = ImageTk.PhotoImage(Image.new("RGB", (64, 48), "teal"))
+        self.photo0 = ImageTk.PhotoImage(Image.new("RGB", (640, 480), "teal"))
+        self.photo1 = ImageTk.PhotoImage(Image.new("RGB", (640, 480), "teal"))
         master.wm_withdraw()
         master.wm_title(title)
+        self.image_gui()
         self.main_ui()
         self.bottom_ui()
         # self.grid(sticky=tk.NSEW) #Add for grid layout
@@ -33,50 +34,61 @@ class App(tk.Frame):
     
         master.bind("<e>", self.force_extend_key)
         master.bind("<r>", self.force_retract_key)
+        master.bind("<KeyRelease-e>", self.force_stop_key)
+        master.bind("<KeyRelease-r>", self.force_stop_key)
         master.bind("<f>", self.low_limit_key)
         master.bind("<a>", self.high_limit_key)
+        master.bind("<s>", self.start_comms_key)
     
         master.wm_protocol("WM_DELETE_WINDOW", self.on_destroy)
         # master.grid_rowconfigure(0, weight = 1) #Add for grid layout
         # master.grid_columnconfigure(0, weight = 1) #Add for grid layout
         master.wm_deiconify()
         
-        
+    def image_gui(self):
+        self.button_frame = tk.Frame(self)
+        self.view0 = Label(self.button_frame, image=self.photo0)
+        self.view0.pack(side=tk.LEFT, expand=True)
+        self.view1 = Label(self.button_frame, image=self.photo1)
+        self.view1.pack(side=tk.RIGHT, expand=True)
+        self.button_frame.pack()#side=tk.TOP, fill=tk.BOTH, expand=False)
 #App UI frame layout and button creation
     def main_ui(self):
-        self.button_frame = tk.Frame(self)
-        self.start0_button = tk.Button(self.button_frame, text="P3-Cam-Start", width=10, bg="green", fg="white", command= lambda: self.start(0))
+        self.button_frame1 = tk.Frame(self)
+        self.start0_button = tk.Button(self.button_frame1, text="P3-Cam-Start", width=10, bg="green", fg="white", command= lambda: self.start(0))
         self.start0_button.pack(anchor="nw", side=tk.LEFT)     
-        self.stop0_button = tk.Button(self.button_frame, text="P3-Cam-Stop", width=10, bg="red", fg="white", command= lambda: self.stop(0))
+        self.stop0_button = tk.Button(self.button_frame1, text="P3-Cam-Stop", width=10, bg="red", fg="white", command= lambda: self.stop(0))
         self.stop0_button.pack(anchor="nw", side=tk.LEFT)
-        self.start1_button = tk.Button(self.button_frame, text="DI-Cam-Start", width=10, bg="green", fg="white", command= lambda: self.start(2))
+        self.start1_button = tk.Button(self.button_frame1, text="DI-Cam-Start", width=10, bg="green", fg="white", command= lambda: self.start(2))
         self.start1_button.pack(anchor="ne", side=tk.RIGHT)     
-        self.stop1_button = tk.Button(self.button_frame, text="DI-Cam-Stop", width=10, bg="red", fg="white", command= lambda: self.stop(2))
+        self.stop1_button = tk.Button(self.button_frame1, text="DI-Cam-Stop", width=10, bg="red", fg="white", command= lambda: self.stop(2))
         self.stop1_button.pack(anchor="ne", side=tk.RIGHT) 
-        self.view0 = ttk.Label(self.button_frame, image=self.photo0)
-        self.view0.pack(side=tk.LEFT, expand=True)
-        self.view1 = ttk.Label(self.button_frame, image=self.photo1)
-        self.view1.pack(side=tk.RIGHT, expand=True)
-        self.button_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.button_frame1.pack()#side=tk.TOP, fill=tk.BOTH, expand=True)
 
     def bottom_ui(self):
-        self.button_frameB = tk.Frame(self)
-        self.Hbutton = Button(text="Aluminum", width=10, bg="gray", fg="red", command=self.high_limit)
-        self.Hbutton.pack(side=RIGHT)
-        self.Lbutton = Button(text="Fiberglass", width=10, bg="alice blue", fg="green", command=self.low_limit)
+        self.button_frame2 = tk.Frame(self)
+        self.Lbutton = Button(self.button_frame2, text="Fiberglass", width=10, bg="alice blue", fg="green", relief=SUNKEN, command=self.low_limit)
         self.Lbutton.pack(side=RIGHT)
-        self.Rbutton = Button(text="Retract", width=10, bg="gray", fg="red", command=self.force_retract)
-        self.Rbutton.pack(side=LEFT)
-        self.Ebutton = Button(text="Extend", width=10, bg="gray", fg="green", command=self.force_extend)
+        self.Hbutton = Button(self.button_frame2, text="Aluminum", width=10, bg="gray", fg="red", command=self.high_limit)
+        self.Hbutton.pack(side=RIGHT)
+        self.Ebutton = Button(self.button_frame2, text="Extend", width=10, bg="gray", fg="green", command=self.force_extend)
         self.Ebutton.pack(side=LEFT)
-        self.Cbutton = Button(text="Start Arduino Serial Comms", width=30, bg="gray", fg="white", command=self.start_comms)
+        self.Rbutton = Button(self.button_frame2, text="Retract", width=10, bg="gray", fg="red", command=self.force_retract)
+        self.Rbutton.pack(side=LEFT)
+        self.Cbutton = Button(self.button_frame2, text="Start Arduino Serial Comms", width=30, bg="gray", fg="white", command=self.start_comms)
         self.Cbutton.pack(side=BOTTOM)
-        self.forceStatus = Label(text="Linear Actuator Status",width=30, height=4)
+        self.forceStatus = Label(self.button_frame2, text="Linear Actuator Status",width=30, height=4)
         self.forceStatus.pack(side=BOTTOM)
-        self.forceReading = Label(text="Applied Force __ (lbs)",width=30, height=4)
+        self.forceReading = Label(self.button_frame2, text="Applied Force __ (lbs)",width=30, height=4)
         self.forceReading.pack(side=BOTTOM)
-        self.button_frameB.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        self.button_frame2.pack()#side=tk.TOP, fill=tk.BOTH, expand=True)
     
+        # Hbutton.grid(column=0,row=1)
+        # Lbutton.grid(column=0,row=2)
+        # Rbutton.grid(column=1,row=2)
+        # Ebutton.grid(column=1,row=1)
+        # forceLabel.grid(column=0,row=3)
+        # forceReading.grid(column=0,row=4)
     
 #####threading included for application performance
     def on_destroy(self):
@@ -87,7 +99,8 @@ class App(tk.Frame):
             self.thread.join(0.2)
         self.winfo_toplevel().destroy()
 
-    def start(self, No):
+    def start(self, Num):
+        No = Num
         if No == 0:
             self.is_running0 = True
             self.thread0 = threading.Thread(target=self.videoLoop0, args=(),daemon=True).start()
@@ -95,20 +108,24 @@ class App(tk.Frame):
             self.is_running1 = True
             self.thread1 = threading.Thread(target=self.videoLoop1, args=(),daemon=True).start()
 
-    def stop(self, No):
+    def stop(self, Num):
+        No = Num
         if No == 0:
-            self.photo0 = ImageTk.PhotoImage(Image.new("RGB", (64, 48), "teal"))
             self.is_running0 = False
+            #time.sleep(1)
+            #self.photo0 = ImageTk.PhotoImage(Image.new("RGB", (160, 120), "teal"))
+            
         else:
-            self.photo1 = ImageTk.PhotoImage(Image.new("RGB", (64, 48), "teal"))
             self.is_running1 = False
+            #time.sleep(1)
+            #self.photo1 = ImageTk.PhotoImage(Image.new("RGB", (160, 120), "teal"))
 
 #####Onboard Camera video feed, for different camera change No=0,1,2,n....    
     def videoLoop0(self, mirror=False):
         cap0 = cv2.VideoCapture(No)
-        cap0.set(cv2.CAP_PROP_FRAME_WIDTH, 160)
-        cap0.set(cv2.CAP_PROP_FRAME_HEIGHT, 120)
-        
+        cap0.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap0.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        time.sleep(2)
         while self.is_running0:
             ret0, cam0 = cap0.read()
             if mirror is True:
@@ -119,9 +136,9 @@ class App(tk.Frame):
             
     def videoLoop1(self, mirror=False):
         cap1 = cv2.VideoCapture(No)
-        cap1.set(cv2.CAP_PROP_FRAME_WIDTH, 160)
-        cap1.set(cv2.CAP_PROP_FRAME_HEIGHT, 120)
-        
+        cap1.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap1.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        time.sleep(2)
         while self.is_running1:
             ret1, cam1 = cap1.read()
             if mirror is True:
@@ -162,7 +179,6 @@ class App(tk.Frame):
                 self.forceReading["text"] = "Load Cell Reads " + forceimport[7:] + " lbs"
             time.sleep(0.1)
 
-    
     def start_comms(self):
         threading.Thread(target=self.start_comms_needle, args=(), daemon=True).start()
     
@@ -180,27 +196,30 @@ class App(tk.Frame):
     def force_retract(self):
         threading.Thread(target=self.force_retract_needle, args=(), daemon=True).start()
 
-    def force_extend_key(self, eventargs):
+    def force_extend_key(self, args):
+        self.Ebutton.config(relief=SUNKEN)
         self.force_extend()
-    def force_retract_key(self, eventargs):
+        
+    def force_retract_key(self, args):
+        self.Rbutton.config(relief=SUNKEN)
         self.force_retract()
-    def low_limit_key(self, eventargs):
+        
+    def low_limit_key(self, args):
         self.low_limit()
-    def high_limit_key(self, eventargs):
+        
+    def high_limit_key(self, args):
         self.high_limit()
+        
+    def start_comms_key(self, args):
+        self.start_comms()
+        
+    def force_stop_key(self, args):
+        self.Ebutton.config(relief=RAISED)
+        self.Rbutton.config(relief=RAISED)
 
 #def main(args):
 root = tk.Tk()
-
-app = App(root, "Force Control Menu")
-#   
-
-    # Hbutton.grid(column=0,row=1)
-    # Lbutton.grid(column=0,row=2)
-    # Rbutton.grid(column=1,row=2)
-    # Ebutton.grid(column=1,row=1)
-    # forceLabel.grid(column=0,row=3)
-    # forceReading.grid(column=0,row=4)
+App(root, "Force Control Menu")  
         
 #Controls Menu Settings
 top = Toplevel()
