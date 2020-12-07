@@ -8,7 +8,7 @@ from queue import Queue
 from PIL import Image
 from PIL import ImageTk
 
-ser = serial.Serial('/dev/ttyUSB1', 9600, timeout=None)
+ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=None)
 global limit; limit = "L"
 global No; No = 0
 
@@ -100,51 +100,59 @@ class App(tk.Frame):
         self.winfo_toplevel().destroy()
 
     def start(self, Num):
-        No = Num
+        global No; No = Num
         if No == 0:
             self.is_running0 = True
+            print("Start 0")
             self.thread0 = threading.Thread(target=self.videoLoop0, args=(),daemon=True).start()
         else:
             self.is_running1 = True
+            print("Start 1")
             self.thread1 = threading.Thread(target=self.videoLoop1, args=(),daemon=True).start()
 
     def stop(self, Num):
-        No = Num
+        global No; No = Num
         if No == 0:
             self.is_running0 = False
+            print("Stop 0")
             #time.sleep(1)
             #self.photo0 = ImageTk.PhotoImage(Image.new("RGB", (160, 120), "teal"))
             
         else:
             self.is_running1 = False
+            print("Stop 0")
             #time.sleep(1)
             #self.photo1 = ImageTk.PhotoImage(Image.new("RGB", (160, 120), "teal"))
 
 #####Onboard Camera video feed, for different camera change No=0,1,2,n....    
     def videoLoop0(self, mirror=False):
-        cap0 = cv2.VideoCapture(No)
+        cap0 = cv2.VideoCapture(0)
         cap0.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         cap0.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         time.sleep(2)
         while self.is_running0:
             ret0, cam0 = cap0.read()
+            print("Capturing 0")
             if mirror is True:
                 cam0 = cam0[:,::-1]
             image0 = cv2.cvtColor(cam0, cv2.COLOR_BGR2RGB)
             self.queue0.put(image0)
+            #time.sleep(0.5)
             self.event_generate('<<MessageGenerated>>')
             
     def videoLoop1(self, mirror=False):
-        cap1 = cv2.VideoCapture(No)
+        cap1 = cv2.VideoCapture(2)
         cap1.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         cap1.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         time.sleep(2)
         while self.is_running1:
             ret1, cam1 = cap1.read()
+            print("Capturing 1")
             if mirror is True:
                 cam1 = cam1[:,::-1]
             image1 = cv2.cvtColor(cam1, cv2.COLOR_BGR2RGB)
             self.queue1.put(image1)
+            #time.sleep(0.5)
             self.event_generate('<<MessageGenerated>>')
             
 #####Camera Performance Magic
@@ -154,19 +162,23 @@ class App(tk.Frame):
             image0 = Image.fromarray(image0)
             self.photo0 = ImageTk.PhotoImage(image0)
             self.view0.configure(image=self.photo0)
+        else:
+            print("queue0 is empty")
         if not self.queue1.empty():
             image1 = self.queue1.get()
             image1 = Image.fromarray(image1)
             self.photo1 = ImageTk.PhotoImage(image1)
             self.view1.configure(image=self.photo1)
+        else:
+            print("queue1 is empty")
 
     def low_limit(self):
-        limit = "L"
+        global limit; limit = "L"
         self.Lbutton.config(relief=SUNKEN, bg = "alice blue")
         self.Hbutton.config(relief=RAISED, bg = "gray")
         
     def high_limit(self):
-        limit = "H"
+        global limit; limit = "H"
         self.Hbutton.config(relief=SUNKEN, bg = "alice blue")
         self.Lbutton.config(relief=RAISED, bg = "gray")
         
@@ -184,10 +196,12 @@ class App(tk.Frame):
     
     def force_retract_needle(self):
         forcecommand = limit + "R"
+        print(forcecommand)
         ser.write(str(forcecommand).encode('utf_8'))
         
     def force_extend_needle(self):
         forcecommand = limit + "E"
+        print(forcecommand)
         ser.write(str(forcecommand).encode('utf_8'))
 
     def force_extend(self):
